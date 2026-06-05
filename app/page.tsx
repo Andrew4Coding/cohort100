@@ -1,65 +1,127 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Target, Play } from "lucide-react";
+
+const STORAGE_KEY = "family100-teams";
+
+export default function HomePage() {
+  const router = useRouter();
+  const [teamCount, setTeamCount] = useState<number>(2);
+  const [teamNames, setTeamNames] = useState<string[]>(["", ""]);
+
+  const handleTeamCountChange = (count: number) => {
+    setTeamCount(count);
+    const newNames = [...teamNames];
+    while (newNames.length < count) {
+      newNames.push("");
+    }
+    while (newNames.length > count) {
+      newNames.pop();
+    }
+    setTeamNames(newNames);
+  };
+
+  const handleNameChange = (index: number, name: string) => {
+    const newNames = [...teamNames];
+    newNames[index] = name;
+    setTeamNames(newNames);
+  };
+
+  const handleStartGame = () => {
+    const validNames = teamNames.map((name) => name.trim() || `Tim ${teamNames.indexOf(name) + 1}`);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(validNames));
+    router.push("/play");
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div
+      className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center"
+      style={{
+        backgroundImage: "linear-gradient(to bottom, rgba(30, 58, 138, 0.8), rgba(30, 58, 138, 0.95)), url('/theatre.jpg')",
+        backgroundColor: "#1E3A8A",
+      }}
+    >
+      <div className="absolute inset-0 bg-blue-900/30" />
+      
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="relative z-10 text-center mb-12"
+      >
+        <h1 className="text-6xl md:text-8xl font-bold text-white tracking-tight mb-4 drop-shadow-lg"
+          style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", textShadow: "4px 4px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000" }}>
+          FAMILY 100
+        </h1>
+        <p className="text-xl text-blue-200 font-semibold tracking-wide">Tebak Jawaban, Kumpulkan Poin!</p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+        className="relative z-10 w-full max-w-md px-4"
+      >
+        <Card className="bg-white/95 backdrop-blur shadow-2xl border-4 border-yellow-400">
+          <CardContent className="p-8 space-y-6">
+            <div className="space-y-3">
+              <Label className="text-xl font-bold text-blue-900">Jumlah Tim</Label>
+              <div className="flex gap-3 justify-center">
+                {[2, 3, 4, 5].map((num) => (
+                  <Button
+                    key={num}
+                    variant={teamCount === num ? "default" : "outline"}
+                    size="lg"
+                    onClick={() => handleTeamCountChange(num)}
+                    className={`w-14 h-14 text-xl font-bold transition-all ${
+                      teamCount === num 
+                        ? "bg-blue-600 hover:bg-blue-700 text-white scale-110" 
+                        : "border-2 border-blue-300 hover:border-blue-500"
+                    }`}
+                  >
+                    {num}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-xl font-bold text-blue-900">Nama Tim</Label>
+              <div className="grid grid-cols-1 gap-3">
+                {teamNames.map((name, index) => (
+                  <div key={index} className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 font-bold text-lg">
+                      {index + 1}.
+                    </span>
+                    <Input
+                      value={name}
+                      onChange={(e) => handleNameChange(index, e.target.value)}
+                      placeholder={`Nama Tim ${index + 1}`}
+                      className="pl-10 h-12 text-lg border-2 border-blue-200 focus:border-blue-500 rounded-lg"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Button
+              onClick={handleStartGame}
+              className="w-full h-14 text-xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-blue-900 rounded-full shadow-lg hover:scale-105 transition-transform"
+              style={{ fontFamily: "'Impact', sans-serif" }}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+              <Play className="w-6 h-6 mr-2" />
+              LET&apos;S GO!
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }
