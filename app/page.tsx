@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,21 @@ export default function HomePage() {
   const [session, setSession] = useState<SessionType>("pagi");
   const [teamCount, setTeamCount] = useState<number>(2);
   const [teamNames, setTeamNames] = useState<string[]>(["", ""]);
+  const bgAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    bgAudioRef.current = new Audio("/opening.mp3");
+    bgAudioRef.current.loop = true;
+    bgAudioRef.current.volume = 0.3;
+    bgAudioRef.current.play().catch(() => {});
+
+    return () => {
+      if (bgAudioRef.current) {
+        bgAudioRef.current.pause();
+        bgAudioRef.current = null;
+      }
+    };
+  }, []);
 
   const handleTeamCountChange = (count: number) => {
     setTeamCount(count);
@@ -96,7 +111,7 @@ export default function HomePage() {
                   className={`w-36 h-14 text-lg font-bold transition-all ${
                     session === "siang"
                       ? "bg-gradient-to-r from-orange-400 to-yellow-400 text-blue-900 scale-110"
-                      : "border-2 border-blue-300 hover:border-orange-400 bg-white"
+                      : "border-2 border-blue-300 hover:border-orange-400 bg-white text-black"
                   }`}
                 >
                   <Sun className="w-5 h-5 mr-2" />

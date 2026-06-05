@@ -33,11 +33,27 @@ export default function GameplayPage() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isStealingPhase, setIsStealingPhase] = useState(false);
   const [stealingTeamIndex, setStealingTeamIndex] = useState<number | null>(null);
+  const [stolenFromTeamIndex, setStolenFromTeamIndex] = useState<number | null>(null);
   const [stealingTeamFirstAttempt, setStealingTeamFirstAttempt] = useState(false);
   const [showCorrectPopup, setShowCorrectPopup] = useState(false);
   const [correctPoints, setCorrectPoints] = useState(0);
   const [gameQuestions, setGameQuestions] = useState<Question[]>([]);
   const scoreChangeTimeoutRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const bgAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    bgAudioRef.current = new Audio("/gameplay.mp3");
+    bgAudioRef.current.loop = true;
+    bgAudioRef.current.volume = 0.3;
+    bgAudioRef.current.play().catch(() => {});
+
+    return () => {
+      if (bgAudioRef.current) {
+        bgAudioRef.current.pause();
+        bgAudioRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const storedNames = localStorage.getItem(STORAGE_KEY);
@@ -104,7 +120,7 @@ export default function GameplayPage() {
             if (idx === stealingTeamIndex) {
               return { ...team, score: team.score + roundPoints };
             }
-            if (idx === currentTeamIndex) {
+            if (stolenFromTeamIndex !== null && idx === stolenFromTeamIndex) {
               return { ...team, score: 0, strikes: 0 };
             }
             return team;
@@ -116,6 +132,7 @@ export default function GameplayPage() {
           setCorrectPoints(0);
           setIsStealingPhase(false);
           setStealingTeamIndex(null);
+          setStolenFromTeamIndex(null);
           setStealingTeamFirstAttempt(false);
           setRoundPoints(0);
           setRevealedAnswers(new Set());
@@ -159,6 +176,7 @@ export default function GameplayPage() {
         setStrikeCount(0);
         setIsStealingPhase(false);
         setStealingTeamIndex(null);
+        setStolenFromTeamIndex(null);
         setStealingTeamFirstAttempt(false);
         setRoundPoints(0);
         setRevealedAnswers(new Set());
@@ -179,6 +197,7 @@ export default function GameplayPage() {
   }, [currentTeamIndex, teams, isStealingPhase, stealingTeamIndex, stealingTeamFirstAttempt]);
 
   const handleStealSelect = (stealingTeamIndex: number) => {
+    setStolenFromTeamIndex(currentTeamIndex);
     setStealingTeamIndex(stealingTeamIndex);
     setCurrentTeamIndex(stealingTeamIndex);
     setShowStealDialog(false);
@@ -200,6 +219,7 @@ export default function GameplayPage() {
       setTeams((prev) => prev.map((team) => ({ ...team, strikes: 0 })));
       setIsStealingPhase(false);
       setStealingTeamIndex(null);
+      setStolenFromTeamIndex(null);
       setStealingTeamFirstAttempt(false);
       setShowRoundOverlay(true);
     } else {
