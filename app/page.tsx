@@ -48,7 +48,7 @@ export default function HomePage() {
     <div
       className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center"
       style={{
-        backgroundImage: "linear-gradient(to bottom, rgba(30, 58, 138, 0.8), rgba(30, 58, 138, 0.95)), url('/family100-bg.jpg')",
+        backgroundImage: "linear-gradient(to bottom, rgba(30, 58, 138, 0.8), rgba(30, 58, 138, 0.95)), url('/theatre.jpg')",
         backgroundColor: "#1E3A8A",
       }}
     >
