@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Target, Play } from "lucide-react";
+import { Play, Sun, Moon } from "lucide-react";
+import { SessionType } from "@/data/questions";
 
 const STORAGE_KEY = "family100-teams";
+const SESSION_KEY = "family100-session";
 
 export default function HomePage() {
   const router = useRouter();
+  const [session, setSession] = useState<SessionType>("pagi");
   const [teamCount, setTeamCount] = useState<number>(2);
   const [teamNames, setTeamNames] = useState<string[]>(["", ""]);
 
@@ -37,6 +40,7 @@ export default function HomePage() {
   const handleStartGame = () => {
     const validNames = teamNames.map((name) => name.trim() || `Tim ${teamNames.indexOf(name) + 1}`);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(validNames));
+    localStorage.setItem(SESSION_KEY, session);
     router.push("/play");
   };
 
@@ -44,7 +48,7 @@ export default function HomePage() {
     <div
       className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center"
       style={{
-        backgroundImage: "linear-gradient(to bottom, rgba(30, 58, 138, 0.8), rgba(30, 58, 138, 0.95)), url('/theatre.jpg')",
+        backgroundImage: "linear-gradient(to bottom, rgba(30, 58, 138, 0.8), rgba(30, 58, 138, 0.95)), url('/family100-bg.jpg')",
         backgroundColor: "#1E3A8A",
       }}
     >
@@ -71,6 +75,36 @@ export default function HomePage() {
       >
         <Card className="bg-white/95 backdrop-blur shadow-2xl border-4 border-yellow-400">
           <CardContent className="p-8 space-y-6">
+            <div className="space-y-3">
+              <Label className="text-xl font-bold text-blue-900">Pilih Sesi</Label>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={() => setSession("pagi")}
+                  size="lg"
+                  className={`w-36 h-14 text-lg font-bold transition-all ${
+                    session === "pagi"
+                      ? "bg-gradient-to-r from-orange-400 to-yellow-400 text-blue-900 scale-110"
+                      : "border-2 border-blue-300 hover:border-orange-400 bg-white"
+                  }`}
+                >
+                  <Moon className="w-5 h-5 mr-2" />
+                  Sesi Pagi
+                </Button>
+                <Button
+                  onClick={() => setSession("siang")}
+                  size="lg"
+                  className={`w-36 h-14 text-lg font-bold transition-all ${
+                    session === "siang"
+                      ? "bg-gradient-to-r from-orange-400 to-yellow-400 text-blue-900 scale-110"
+                      : "border-2 border-blue-300 hover:border-orange-400 bg-white"
+                  }`}
+                >
+                  <Sun className="w-5 h-5 mr-2" />
+                  Sesi Siang
+                </Button>
+              </div>
+            </div>
+
             <div className="space-y-3">
               <Label className="text-xl font-bold text-blue-900">Jumlah Tim</Label>
               <div className="flex gap-3 justify-center">

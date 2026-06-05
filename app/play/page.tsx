@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { questions } from "@/data/questions";
-import { Team } from "@/types/game";
+import { sesiPagiQuestions, sesiSiangQuestions, SessionType } from "@/data/questions";
+import { Team, Question } from "@/types/game";
 import { X, ChevronRight, Check } from "lucide-react";
 
 const STORAGE_KEY = "family100-teams";
@@ -36,11 +36,16 @@ export default function GameplayPage() {
   const [stealingTeamFirstAttempt, setStealingTeamFirstAttempt] = useState(false);
   const [showCorrectPopup, setShowCorrectPopup] = useState(false);
   const [correctPoints, setCorrectPoints] = useState(0);
+  const [gameQuestions, setGameQuestions] = useState<Question[]>([]);
   const scoreChangeTimeoutRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
 
   useEffect(() => {
     const storedNames = localStorage.getItem(STORAGE_KEY);
     const storedScores = localStorage.getItem(SCORES_KEY);
+    const storedSession = localStorage.getItem("family100-session") as SessionType;
+    
+    const sessionQuestions = storedSession === "siang" ? sesiSiangQuestions : sesiPagiQuestions;
+    setGameQuestions(sessionQuestions);
     
     if (storedNames) {
       const teamNames: string[] = JSON.parse(storedNames);
@@ -76,7 +81,7 @@ export default function GameplayPage() {
     localStorage.setItem(SCORES_KEY, JSON.stringify(savedScores));
   }, [teams]);
 
-  const currentQuestion = questions[currentRound];
+  const currentQuestion = gameQuestions[currentRound];
 
   const handleAnswerClick = useCallback((answerIndex: number) => {
     if (revealedAnswers.has(answerIndex)) return;
@@ -188,7 +193,7 @@ export default function GameplayPage() {
   };
 
   const handleNextRound = () => {
-    if (currentRound < questions.length - 1) {
+    if (currentRound < gameQuestions.length - 1) {
       setCurrentRound((prev) => prev + 1);
       setRevealedAnswers(new Set());
       setRoundPoints(0);
@@ -363,7 +368,7 @@ export default function GameplayPage() {
               {currentQuestion.question}
             </h2>
             <div className="text-center text-gray-500 text-sm">
-              Round {currentRound + 1} dari {questions.length}
+              Round {currentRound + 1} dari {gameQuestions.length}
               {isStealingPhase && <span className="ml-2 text-green-600 font-bold">| Mencuri: {roundPoints} poin</span>}
             </div>
           </motion.div>
