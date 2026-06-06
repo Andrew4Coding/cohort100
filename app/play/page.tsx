@@ -231,6 +231,11 @@ export default function GameplayPage() {
     router.push("/finish");
   };
 
+  const handleRestartRound = () => {
+    localStorage.removeItem(SCORES_KEY);
+    window.location.reload();
+  };
+
   if (!isInitialized || teams.length === 0) {
     return null;
   }
@@ -360,6 +365,13 @@ export default function GameplayPage() {
           </div>
 
           <div className="flex gap-3">
+            <Button
+              onClick={handleRestartRound}
+              variant="outline"
+              className="bg-white/20 hover:bg-white/30 text-white border-white/50 font-bold"
+            >
+              Restart
+            </Button>
             <Button
               onClick={handleFinish}
               variant="outline"
