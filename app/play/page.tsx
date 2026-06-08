@@ -11,6 +11,7 @@ import { X, ChevronRight, Check } from "lucide-react";
 
 const STORAGE_KEY = "family100-teams";
 const SCORES_KEY = "family100-scores";
+const GAME_STATE_KEY = "family100-game-state";
 
 function playAudio(filename: string) {
   try {
@@ -59,6 +60,7 @@ export default function GameplayPage() {
     const storedNames = localStorage.getItem(STORAGE_KEY);
     const storedScores = localStorage.getItem(SCORES_KEY);
     const storedSession = localStorage.getItem("family100-session") as SessionType;
+    const storedGameState = localStorage.getItem(GAME_STATE_KEY);
     
     const sessionQuestions = storedSession === "siang" ? sesiSiangQuestions : sesiPagiQuestions;
     setGameQuestions(sessionQuestions);
@@ -67,20 +69,45 @@ export default function GameplayPage() {
       const teamNames: string[] = JSON.parse(storedNames);
       const savedScores: Record<string, number> = storedScores ? JSON.parse(storedScores) : {};
       
+      let initialRound = 0;
+      let initialRoundPoints = 0;
+      let initialIsStealingPhase = false;
+      let initialStealingTeamIndex: number | null = null;
+      let initialStolenFromTeamIndex: number | null = null;
+      let initialRevealedAnswers: Set<number> = new Set();
+      
+      if (storedGameState) {
+        const gameState = JSON.parse(storedGameState);
+        initialRound = gameState.currentRound || 0;
+        initialRoundPoints = gameState.roundPoints || 0;
+        initialIsStealingPhase = gameState.isStealingPhase || false;
+        initialStealingTeamIndex = gameState.stealingTeamIndex ?? null;
+        initialStolenFromTeamIndex = gameState.stolenFromTeamIndex ?? null;
+        initialRevealedAnswers = new Set(gameState.revealedAnswers || []);
+      }
+      
       const initialTeams: Team[] = teamNames.map((name, index) => ({
         id: index,
         name,
         score: savedScores[`team-${index}`] || 0,
-        strikes: 0,
+        strikes: storedGameState && savedScores[`team-${index}-strikes`] !== undefined 
+          ? savedScores[`team-${index}-strikes`] 
+          : 0,
       }));
       setTeams(initialTeams);
+      setCurrentRound(initialRound);
+      setRoundPoints(initialRoundPoints);
+      setIsStealingPhase(initialIsStealingPhase);
+      setStealingTeamIndex(initialStealingTeamIndex);
+      setStolenFromTeamIndex(initialStolenFromTeamIndex);
+      setRevealedAnswers(initialRevealedAnswers);
       setIsInitialized(true);
     } else {
       router.push("/");
     }
   }, [router]);
 
-  useEffect(() => {
+useEffect(() => {
     if (isInitialized && teams.length > 0) {
       const timer = setTimeout(() => {
         setShowRoundOverlay(false);
@@ -90,12 +117,25 @@ export default function GameplayPage() {
   }, [isInitialized, teams.length, currentRound]);
 
   useEffect(() => {
-    const savedScores: Record<string, number> = {};
-    teams.forEach((team) => {
-      savedScores[`team-${team.id}`] = team.score;
-    });
-    localStorage.setItem(SCORES_KEY, JSON.stringify(savedScores));
-  }, [teams]);
+    if (isInitialized && teams.length > 0) {
+      const savedScores: Record<string, number> = {};
+      teams.forEach((team) => {
+        savedScores[`team-${team.id}`] = team.score;
+        savedScores[`team-${team.id}-strikes`] = team.strikes;
+      });
+      localStorage.setItem(SCORES_KEY, JSON.stringify(savedScores));
+      
+      const gameState = {
+        currentRound,
+        roundPoints,
+        isStealingPhase,
+        stealingTeamIndex,
+        stolenFromTeamIndex,
+        revealedAnswers: Array.from(revealedAnswers),
+      };
+      localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
+    }
+  }, [teams, currentRound, roundPoints, isStealingPhase, stealingTeamIndex, stolenFromTeamIndex, revealedAnswers, isInitialized]);
 
   const currentQuestion = gameQuestions[currentRound];
 
@@ -103,9 +143,10 @@ export default function GameplayPage() {
     if (revealedAnswers.has(answerIndex)) return;
 
     const answer = currentQuestion.answers[answerIndex];
+    const newRoundPoints = roundPoints + answer.points;
     
     setRevealedAnswers(new Set([...revealedAnswers, answerIndex]));
-    setRoundPoints((prev) => prev + answer.points);
+    setRoundPoints(newRoundPoints);
     setCorrectPoints(answer.points);
     setShowCorrectPopup(true);
 
@@ -118,7 +159,7 @@ export default function GameplayPage() {
         setTeams((prev) =>
           prev.map((team, idx) => {
             if (idx === stealingTeamIndex) {
-              return { ...team, score: team.score + roundPoints };
+              return { ...team, score: team.score + newRoundPoints };
             }
             if (stolenFromTeamIndex !== null && idx === stolenFromTeamIndex) {
               return { ...team, score: 0, strikes: 0 };
@@ -153,7 +194,7 @@ export default function GameplayPage() {
       setShowCorrectPopup(false);
       setCorrectPoints(0);
     }, 1200);
-  }, [revealedAnswers, currentQuestion, currentTeamIndex, isStealingPhase, stealingTeamIndex, stealingTeamFirstAttempt, roundPoints]);
+  }, [revealedAnswers, currentQuestion, currentTeamIndex, isStealingPhase, stealingTeamIndex, stealingTeamFirstAttempt, roundPoints, stolenFromTeamIndex]);
 
   const handleStrike = useCallback(() => {
     const newStrikeCount = teams[currentTeamIndex].strikes + 1;
@@ -233,6 +274,7 @@ export default function GameplayPage() {
 
   const handleRestartRound = () => {
     localStorage.removeItem(SCORES_KEY);
+    localStorage.removeItem(GAME_STATE_KEY);
     window.location.reload();
   };
 
